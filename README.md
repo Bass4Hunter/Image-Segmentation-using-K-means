@@ -44,11 +44,12 @@ https://help.ubuntu.com/community/MpichCluster
 
 ### Instalando NFS
 
-* En el **servidor**:
+* En el **servidor**
 
 ``sudo apt-get install nfs-server ``
 
-* En el **nodos**:
+* En el **nodos**
+
 ``sudo apt-get install nfs-client ``
 
 
