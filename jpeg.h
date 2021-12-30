@@ -1,3 +1,4 @@
+/* class jpeg brinda las funcionalidad para abrir,leer,modificar y guardar una imagen */
 #pragma once
 
 #include <cstdint>

@@ -1,7 +1,10 @@
+/* class Point representa la abstraccion del pixel de una imagen, 
+las dimensiones obtenidas son los colores RGB*/
+
 #ifndef POINT_H
 #define POINT_H
 
-#define MAX_DIM 3 // RGBA
+#define MAX_DIM 3 // RGB
 
 struct Point {
     double values[MAX_DIM];

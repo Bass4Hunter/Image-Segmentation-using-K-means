@@ -1,3 +1,6 @@
+/* class Worker que representa a cada nodo; brinda la funcion int run(int it)  
+que representa la iteracion para obtener el contenido de cada cluster */
+
 #ifndef WORKER_H
 #define WORKER_H
 

@@ -1,3 +1,4 @@
+/* class FileManager permite crear un archivo csv que contiene todos los puntos */
 #ifndef FILEMANAGER_H
 #define FILEMANAGER_H
 

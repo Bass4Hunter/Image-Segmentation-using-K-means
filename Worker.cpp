@@ -12,8 +12,8 @@
 #include "jpeg.h"
 #include <map>
 #include <string>
-#define NUM_THREAD 4
 
+/*Se inicializa las variables que seran compartidas a todos los nodos*/
 Worker::Worker(int rank, MPI_Comm comm) : rank(rank), comm(comm), notChanged(1)
 {
 
@@ -29,6 +29,7 @@ Worker::Worker(int rank, MPI_Comm comm) : rank(rank), comm(comm), notChanged(1)
     omp_total_time = 0.0;
 }
 
+/* parte del calculo para obtener la distancia euclidiana */
 double Worker::squared_norm(Point p1, Point p2)
 {
     double sum = 0.0;
@@ -44,6 +45,11 @@ void Worker::setLastIteration(int lastIt)
     lastIteration = lastIt;
 }
 
+/* utilizando la clase FileManager creamos el archivo csv que contiene todos los puntos que representa los pixeles de una imagen
+    y definimos los parametros de la cantidad de clusters (centroides) y la maxima cantidad de iteraciones
+    esta opeacion solo se realiza en el nodo 0
+
+*/
 void Worker::createDataset(std::string FileImg)
 {
     if (rank == 0)
@@ -70,6 +76,10 @@ void Worker::createDataset(std::string FileImg)
     }
 }
 
+/*
+    la funcion readDataset permite leer el archivo csv que contiene los puntos totales
+    esta opeacion solo se realiza en el nodo 0
+*/
 void Worker::readDataset()
 {
 
@@ -127,6 +137,10 @@ void Worker::readDataset()
     }
 }
 
+/*
+    Se realiza un scatter de los puntos totales  (numPoints / numNodes)  a cada nodo de acuerdo a la cantidad de procesadores 
+    tambien se realiza un broadcast de la maxima cantidad de iteraciones, y la cantidad de puntos totales.
+*/
 void Worker::scatterDataset()
 {
 
@@ -196,6 +210,8 @@ void Worker::scatterDataset()
     total_time += end - start;
 }
 
+
+/*la funcion extractCluster crea los centroides (clusters) y realiza  un broadcast de los centroides y la cantidad de centroides*/
 void Worker::extractCluster()
 {
 
@@ -211,7 +227,6 @@ void Worker::extractCluster()
 
         std::string string_choice;
         int choice;
-        bool gameOn = true;
 
 
         std::vector<int> clusterIndices;
@@ -235,7 +250,6 @@ void Worker::extractCluster()
         {
             clusters.push_back(dataset[clusterIndices[i]]);
         }
-        gameOn = false;    
 
             
         
@@ -261,6 +275,7 @@ void Worker::extractCluster()
     }
 }
 
+/* la funcion getIdNearstCluster permite obtener el cluster de cada punto para esto se utilizo la distancia euclidiana hacia los centroides*/
 int Worker::getIdNearestCluster(Point p)
 {
     int idCluster = 0; 
@@ -293,6 +308,10 @@ int Worker::getIdNearestCluster(Point p)
     return idCluster;
 }
 
+
+/* La funcion run representa la operacion de asignar el cluster de todos los puntos que tiene un nodo 
+    y por ultimo se realiza la operacion all reduce para calcular el nuevo  valor de los centroides 
+*/
 int Worker::run(int it)
 {
     double start = MPI_Wtime();
@@ -312,7 +331,7 @@ int Worker::run(int it)
     }
 
     t_i = omp_get_wtime();
-#pragma omp parallel for shared(memCounter) num_threads(NUM_THREAD)
+#pragma omp parallel for shared(memCounter)
     for (int i = 0; i < localDataset.size(); i++)
     {
 
@@ -352,7 +371,7 @@ int Worker::run(int it)
     }
 
     t_i = omp_get_wtime();
-#pragma omp parallel for num_threads(NUM_THREAD) shared(reduceArr) 
+#pragma omp parallel for  shared(reduceArr) 
     for (int i = 0; i < K; i++)
     {
         for (int j = 0; j < total_values; j++)
@@ -394,6 +413,9 @@ int Worker::run(int it)
     return globalNotChanged;
 }
 
+/* la funcion updateLocalSum permite realizar la sumatoria local  de las distancias de cada cluster
+    para facilitar la obtencion de los centroides */
+
 void Worker::updateLocalSum()
 {
     //reset LocalSum at each iteration
@@ -422,6 +444,7 @@ Worker::~Worker()
     delete[] globalMembership;
 }
 
+/*  La funcion computeGlobalMembership permite unir todos los puntos distribuidos, es decir, obtener el cluster de todos los puntos*/
 void Worker::computeGlobalMembership()
 {
 
@@ -472,6 +495,10 @@ struct rgb
     uint8_t g;
     uint8_t b;
 };
+
+/* la funcion writeClusterMembership crea un archivo csv que contiene el contenido de cada cluster y 
+    tambien crea la imagen segmentada */
+
 void Worker::writeClusterMembership()
 {
     std::ofstream myfile;
